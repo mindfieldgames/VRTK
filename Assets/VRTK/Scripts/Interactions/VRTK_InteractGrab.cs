@@ -65,7 +65,6 @@ namespace VRTK
         protected GameObject undroppableGrabbedObject;
 
         protected VRTK_InteractTouch interactTouch;
-        protected VRTK_ControllerActions controllerActions;
         protected VRTK_ControllerEvents controllerEvents;
 
         public virtual void OnControllerGrabInteractableObject(ObjectInteractEventArgs e)
@@ -122,7 +121,6 @@ namespace VRTK
         protected virtual void OnEnable()
         {
             interactTouch = GetComponent<VRTK_InteractTouch>();
-            controllerActions = GetComponent<VRTK_ControllerActions>();
             controllerEvents = GetComponent<VRTK_ControllerEvents>();
 
             RegrabUndroppableObject();
@@ -286,17 +284,18 @@ namespace VRTK
 
         protected virtual void ToggleControllerVisibility(bool visible)
         {
+            GameObject modelContainer = VRTK_DeviceFinder.GetModelAliasController(interactTouch.gameObject);
             if (grabbedObject)
             {
                 var controllerAppearanceScript = grabbedObject.GetComponentInParent<VRTK_InteractControllerAppearance>();
                 if (controllerAppearanceScript)
                 {
-                    controllerAppearanceScript.ToggleControllerOnGrab(visible, controllerActions, grabbedObject);
+                    controllerAppearanceScript.ToggleControllerOnGrab(visible, modelContainer, grabbedObject);
                 }
             }
             else if (visible)
             {
-                controllerActions.ToggleControllerModel(true, grabbedObject);
+                VRTK_SharedMethods.SetRendererVisible(modelContainer, grabbedObject);
             }
         }
 

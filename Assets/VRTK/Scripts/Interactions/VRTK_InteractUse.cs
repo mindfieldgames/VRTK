@@ -44,7 +44,6 @@ namespace VRTK
         protected GameObject usingObject = null;
 
         protected VRTK_InteractTouch interactTouch;
-        protected VRTK_ControllerActions controllerActions;
         protected VRTK_ControllerEvents controllerEvents;
 
         public virtual void OnControllerUseInteractableObject(ObjectInteractEventArgs e)
@@ -114,7 +113,6 @@ namespace VRTK
         protected virtual void OnEnable()
         {
             interactTouch = GetComponent<VRTK_InteractTouch>();
-            controllerActions = GetComponent<VRTK_ControllerActions>();
             controllerEvents = GetComponent<VRTK_ControllerEvents>();
 
             ManageUseListener(true);
@@ -243,12 +241,13 @@ namespace VRTK
 
         protected virtual void ToggleControllerVisibility(bool visible)
         {
+            GameObject modelContainer = VRTK_DeviceFinder.GetModelAliasController(interactTouch.gameObject);
             if (usingObject)
             {
                 var controllerAppearanceScript = usingObject.GetComponentInParent<VRTK_InteractControllerAppearance>();
                 if (controllerAppearanceScript)
                 {
-                    controllerAppearanceScript.ToggleControllerOnUse(visible, controllerActions, usingObject);
+                    controllerAppearanceScript.ToggleControllerOnUse(visible, modelContainer, usingObject);
                 }
             }
         }
