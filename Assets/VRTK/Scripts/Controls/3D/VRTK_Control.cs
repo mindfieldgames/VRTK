@@ -30,11 +30,11 @@ namespace VRTK
     public abstract class VRTK_Control : MonoBehaviour
     {
         [Serializable]
-        [Obsolete("`VRTK_Control.ValueChangedEvent` has been replaced with delegate events. `VRTK_Control_UnityEvents` is now required to access Unity events. This method will be removed in a future version of VRTK.")]
+        //[Obsolete("`VRTK_Control.ValueChangedEvent` has been replaced with delegate events. `VRTK_Control_UnityEvents` is now required to access Unity events. This method will be removed in a future version of VRTK.")]
         public class ValueChangedEvent : UnityEvent<float, float> { }
 
         [Serializable]
-        [Obsolete("`VRTK_Control.DefaultControlEvents` has been replaced with delegate events. `VRTK_Control_UnityEvents` is now required to access Unity events. This method will be removed in a future version of VRTK.")]
+        //[Obsolete("`VRTK_Control.DefaultControlEvents` has been replaced with delegate events. `VRTK_Control_UnityEvents` is now required to access Unity events. This method will be removed in a future version of VRTK.")]
         public class DefaultControlEvents
         {
             /// <summary>
@@ -68,7 +68,7 @@ namespace VRTK
         }
 
         [Tooltip("The default events for the control. This parameter is deprecated and will be removed in a future version of VRTK.")]
-        [Obsolete("`VRTK_Control.defaultEvents` has been replaced with delegate events. `VRTK_Control_UnityEvents` is now required to access Unity events. This method will be removed in a future version of VRTK.")]
+        //[Obsolete("`VRTK_Control.defaultEvents` has been replaced with delegate events. `VRTK_Control_UnityEvents` is now required to access Unity events. This method will be removed in a future version of VRTK.")]
         public DefaultControlEvents defaultEvents;
 
         [Tooltip("If active the control will react to the controller without the need to push the grab button.")]

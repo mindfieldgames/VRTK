@@ -21,7 +21,7 @@ namespace VRTK
         [Tooltip("A custom raycaster to use when raycasting to find floors.")]
         public VRTK_CustomRaycast customRaycast;
         [Tooltip("**OBSOLETE** The layers to ignore when raycasting to find floors.")]
-        [Obsolete("`VRTK_HeightAdjustTeleport.layersToIgnore` is no longer used in the `VRTK_HeightAdjustTeleport` class. This parameter will be removed in a future version of VRTK.")]
+        //[Obsolete("`VRTK_HeightAdjustTeleport.layersToIgnore` is no longer used in the `VRTK_HeightAdjustTeleport` class. This parameter will be removed in a future version of VRTK.")]
         public LayerMask layersToIgnore = Physics.IgnoreRaycastLayer;
 
         protected override void OnEnable()

@@ -65,7 +65,7 @@ namespace VRTK
         public float buttonStrength = 5.0f;
 
         [Tooltip("The events specific to the button control. This parameter is deprecated and will be removed in a future version of VRTK.")]
-        [Obsolete("`VRTK_Control.events` has been replaced with delegate events. `VRTK_Button_UnityEvents` is now required to access Unity events. This method will be removed in a future version of VRTK.")]
+        //[Obsolete("`VRTK_Control.events` has been replaced with delegate events. `VRTK_Button_UnityEvents` is now required to access Unity events. This method will be removed in a future version of VRTK.")]
         public ButtonEvents events;
 
         /// <summary>

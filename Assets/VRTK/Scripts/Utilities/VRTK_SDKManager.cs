@@ -2,6 +2,7 @@
 namespace VRTK
 {
     using UnityEngine;
+	using UnityEngine.VR;
 #if UNITY_EDITOR
     using UnityEditor;
     using UnityEditor.Callbacks;
@@ -80,7 +81,16 @@ namespace VRTK
         [Tooltip("If this is true then the instance of the SDK Manager won't be destroyed on every scene load.")]
         public bool persistOnLoad;
 
-        [Tooltip("This determines whether the SDK object references are automatically set to the objects of the selected SDKs. If this is true populating is done whenever the selected SDKs change.")]
+		[Tooltip("If this is true then the SDK is automatically selected correctly during the startup. Do note that it's not guaranteed to get right and not supported on all platforms (eg. PSVR).")]
+		public bool automaticSDKSelection = false;
+
+		/// <summary>
+		/// List of prefabs to be loaded for automatic SDK selection.
+		/// </summary>
+		[SerializeField]
+		public GameObject[] automaticSDKPrefabList;
+
+		[Tooltip("This determines whether the SDK object references are automatically set to the objects of the selected SDKs. If this is true populating is done whenever the selected SDKs change.")]
         public bool autoPopulateObjectReferences = true;
 
         [Tooltip("This determines whether the scripting define symbols required by the selected SDKs are automatically added to and removed from the player settings. If this is true managing is done whenever the selected SDKs or the current active SDK Manager change in the Editor.")]
@@ -315,7 +325,7 @@ namespace VRTK
         /// <param name="force">Whether to ignore <see cref="autoPopulateObjectReferences"/> while deciding to populate.</param>
         public void PopulateObjectReferences(bool force)
         {
-            if (!(force || autoPopulateObjectReferences))
+            if (!(force || autoPopulateObjectReferences) || automaticSDKSelection)
             {
                 return;
             }
@@ -516,16 +526,96 @@ namespace VRTK
         protected virtual void Awake()
         {
             CreateInstance();
+			SetupSDK();
             SetupHeadset();
             SetupControllers();
             GetBoundariesSDK().InitBoundaries();
             gameObject.AddComponent<VRTK_InstanceMethods>();
         }
 
-        /// <summary>
-        /// Populates <see cref="AvailableScriptingDefineSymbolPredicateInfos"/> with all the available <see cref="SDK_ScriptingDefineSymbolPredicateAttribute"/>s and associated method infos.
-        /// </summary>
-        private static void PopulateAvailableScriptingDefineSymbolPredicateInfos()
+		/// <summary>
+		/// Handles SDK selection during startup. Must be called before setupping any SDK specific stuff.
+		/// </summary>
+		private void SetupSDK() {
+			// Check if we even have to do any SDK selection
+			bool needsSDKSetup = automaticSDKSelection || (actualBoundaries == null && actualHeadset == null && actualLeftController == null && actualRightController == null);
+			if (!needsSDKSetup)
+				return;
+
+			string selectedSDK = "Fallback";
+
+			// Heuristic SDK detection
+			if (automaticSDKSelection) {
+				if (!VRDevice.isPresent) {
+					selectedSDK = "Simulator";
+				} else {
+					if (VRDevice.model.Contains("Oculus") || VRDevice.model.Contains("Rift")) {
+						selectedSDK = "OculusVR";
+					} else {
+						// Assume everyone else except Oculus uses SteamVR
+						selectedSDK = "SteamVR";
+					}
+				}
+
+				// Check for command line SDKs. These override all the previous selections.
+				var args = System.Environment.GetCommandLineArgs();
+				foreach (var arg in args) {
+					if (arg.Equals("--vr-none")) selectedSDK = "Fallback";
+					if (arg.Equals("--vr-oculus")) selectedSDK = "OculusVR";
+					if (arg.Equals("--vr-steam")) selectedSDK = "SteamVR";
+					if (arg.Equals("--vr-simulator")) selectedSDK = "Simulator";
+				}
+
+				Debug.Log("Selected VR SDK: "+selectedSDK);
+
+				// Set correct individual SDKs
+				systemSDKInfo = GetSDK(selectedSDK, AvailableSystemSDKInfos);
+				boundariesSDKInfo = GetSDK(selectedSDK, AvailableBoundariesSDKInfos);
+				headsetSDKInfo = GetSDK(selectedSDK, AvailableHeadsetSDKInfos);
+				controllerSDKInfo = GetSDK(selectedSDK, AvailableControllerSDKInfos);
+
+				// Load the SDK camera rig if one has been assigned
+				int sdkIndex = AvailableSystemSDKInfos.IndexOf(GetSDK(selectedSDK));
+				var sdkPrefab = automaticSDKPrefabList[sdkIndex];
+				if (sdkPrefab != null) {
+					var go = Instantiate(sdkPrefab) as GameObject;
+					if (go != null) {
+						// Remove (Clone) from the name of the instantiated game object, otherwise SDKs don't work properly
+						// as they find the gameobjects by their name.
+						go.name = go.name.Replace("(Clone)", "");
+					}
+				}
+				// Disable VR if we don't have a true VR SDK
+				if (selectedSDK == "Fallback" || selectedSDK == "Simulator") {
+					VRSettings.enabled = false;
+					VRSettings.LoadDeviceByName("None");
+				}
+
+				// Assign VRTK components to the newly instantiated rig
+				var playareaTransform = GetBoundariesSDK().GetPlayArea();
+				actualBoundaries = (playareaTransform ? playareaTransform.gameObject : null);
+
+				var headsetTransform = GetHeadsetSDK().GetHeadset();
+				actualHeadset = (headsetTransform ? headsetTransform.gameObject : null);
+
+				var controllerLeft = GetControllerSDK().GetControllerLeftHand(true);
+				actualLeftController = controllerLeft;
+
+				var controllerRight = GetControllerSDK().GetControllerRightHand(true);
+				actualRightController = controllerRight;
+
+				var controllerAliasLeft = GetControllerSDK().GetControllerModel(SDK_BaseController.ControllerHand.Left);
+				modelAliasLeftController = controllerAliasLeft;
+
+				var controllerAliasRight = GetControllerSDK().GetControllerModel(SDK_BaseController.ControllerHand.Right);
+				modelAliasRightController = controllerAliasRight;
+			}
+		}
+
+		/// <summary>
+		/// Populates <see cref="AvailableScriptingDefineSymbolPredicateInfos"/> with all the available <see cref="SDK_ScriptingDefineSymbolPredicateAttribute"/>s and associated method infos.
+		/// </summary>
+		private static void PopulateAvailableScriptingDefineSymbolPredicateInfos()
         {
             var predicateInfos = new List<ScriptingDefineSymbolPredicateInfo>();
 
@@ -718,6 +808,16 @@ namespace VRTK
                 Destroy(gameObject);
             }
         }
+
+		private VRTK_SDKInfo GetSDK(string name, ReadOnlyCollection<VRTK_SDKInfo> sdkCollection = null) {
+			if (sdkCollection == null) sdkCollection= AvailableSystemSDKInfos;
+
+			if (sdkCollection != null) {
+				return sdkCollection.First(info => info.description.prettyName.Equals(name));
+			}
+
+			return null;
+		}
 
         /// <summary>
         /// Handles the various SDK getters by logging potential errors.

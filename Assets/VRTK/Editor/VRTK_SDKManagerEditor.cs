@@ -22,7 +22,43 @@
 
             EditorGUILayout.PropertyField(serializedObject.FindProperty("persistOnLoad"));
 
-            EditorGUILayout.BeginHorizontal();
+			EditorGUILayout.PropertyField(serializedObject.FindProperty("automaticSDKSelection"));
+
+			// Show the prefab pointer list
+			GUILayout.Label("SDK Prefab Links");
+
+			EditorGUI.indentLevel++;
+
+			if (sdkManager.automaticSDKPrefabList == null || sdkManager.automaticSDKPrefabList.Length != VRTK_SDKManager.AvailableSystemSDKInfos.Count) {
+				sdkManager.automaticSDKPrefabList = new GameObject[VRTK_SDKManager.AvailableSystemSDKInfos.Count];
+			}
+
+			int cnt = 0;
+			foreach (var sdk in VRTK_SDKManager.AvailableSystemSDKInfos) {
+				string sdkName = sdk.description.prettyName;
+				sdkManager.automaticSDKPrefabList[cnt] = (GameObject)EditorGUILayout.ObjectField(sdkName, sdkManager.automaticSDKPrefabList[cnt], typeof(GameObject), false, null);
+
+				// Try to auto-populate the prefabs if we know them
+				if (sdkManager.automaticSDKPrefabList[cnt] == null) {
+					if (sdkName.ToLower().Equals("oculusvr")) {
+						sdkManager.automaticSDKPrefabList[cnt] = FindAndGetPrefab("OVRCameraRig");
+					} else if (sdkName.ToLower().Equals("steamvr")) {
+						sdkManager.automaticSDKPrefabList[cnt] = FindAndGetPrefab("[CameraRig]");
+					} else if (sdkName.ToLower().Equals("simulator")) {
+						sdkManager.automaticSDKPrefabList[cnt] = FindAndGetPrefab("VRSimulatorCameraRig");
+					}
+				}
+
+				cnt++;
+			}
+
+			EditorGUI.indentLevel--;
+
+
+			// Disable the GUI for next elements if we automatically select the SDK
+			if (sdkManager.automaticSDKSelection) GUI.enabled = false;
+
+			EditorGUILayout.BeginHorizontal();
 
             EditorGUI.BeginChangeCheck();
             EditorGUILayout.PropertyField(serializedObject.FindProperty("autoPopulateObjectReferences"), GUILayout.ExpandWidth(false));
@@ -226,7 +262,10 @@
 
             EditorGUILayout.EndVertical();
 
-            serializedObject.ApplyModifiedProperties();
+			if (sdkManager.automaticSDKSelection) GUI.enabled = true;
+
+
+			serializedObject.ApplyModifiedProperties();
         }
 
         #region Handle undo
@@ -271,7 +310,7 @@
             }
         }
 
-        #endregion
+        #endregion Handle undo
 
         /// <summary>
         /// Draws a popup menu and handles the selection for an SDK info.
@@ -318,5 +357,15 @@
                 sdkInfoPropertyInfo.GetSetMethod().Invoke(sdkManager, new object[] { newSelectedSDKInfo });
             }
         }
+
+		private GameObject FindAndGetPrefab(string assetName) {
+			var assetGUID = AssetDatabase.FindAssets(assetName);
+			if (assetGUID != null && assetGUID.Length > 0) {
+				GameObject asset = (GameObject)AssetDatabase.LoadAssetAtPath(AssetDatabase.GUIDToAssetPath(assetGUID[0]), typeof(GameObject));
+				var prefab = PrefabUtility.FindPrefabRoot(asset);
+				return prefab;
+			}
+			return null;
+		}
     }
 }
