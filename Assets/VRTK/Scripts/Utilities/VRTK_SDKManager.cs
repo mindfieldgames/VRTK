@@ -502,7 +502,7 @@ namespace VRTK
                     {
                         sdkErrorDescriptions.Add(string.Format("The SDK '{0}' doesn't exist anymore. The {1} fallback SDK will be used instead.", currentSDKInfo.originalTypeNameWhenFallbackIsUsed, baseName));
                     }
-                    else
+                    else if (!automaticSDKSelection)
                     {
                         sdkErrorDescriptions.Add("A fallback SDK is used. Make sure to set a real SDK.");
                     }
