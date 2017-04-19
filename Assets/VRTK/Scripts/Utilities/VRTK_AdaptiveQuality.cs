@@ -124,7 +124,7 @@ namespace VRTK
         [NonSerialized]
         public int overrideRenderViewportScaleLevel;
 
-        #endregion
+        #endregion Public fields
 
         #region Public readonly fields & properties
 
@@ -164,7 +164,7 @@ namespace VRTK
             get { return RenderTargetResolutionForRenderScale(CurrentRenderScale); }
         }
 
-        #endregion
+        #endregion Public readonly fields & properties
 
         #region Private fields
 
@@ -192,7 +192,7 @@ namespace VRTK
         private GameObject debugVisualizationQuad;
         private Material debugVisualizationQuadMaterial;
 
-        #endregion
+        #endregion Private fields
 
         public VRTK_AdaptiveQuality()
         {
@@ -352,7 +352,7 @@ namespace VRTK
             UpdateMSAALevel();
         }
 
-        #endregion
+        #endregion MonoBehaviour methods
 
         private void HandleCommandLineArguments()
         {
@@ -644,7 +644,7 @@ namespace VRTK
             return Mathf.Clamp(renderScaleLevel, 0, allRenderScales.Count - 1);
         }
 
-        #endregion
+        #endregion Render scale methods
 
         #region Debug visualization methods
 
@@ -710,7 +710,9 @@ namespace VRTK
                 return;
             }
 
-            int lastFrameIsInBudget = interleavedReprojectionEnabled || VRStats.gpuTimeLastFrame > singleFrameDurationInMilliseconds
+			float gpuTimeLastFrame;
+			VRStats.TryGetGPUTimeLastFrame(out gpuTimeLastFrame);
+            int lastFrameIsInBudget = interleavedReprojectionEnabled || gpuTimeLastFrame > singleFrameDurationInMilliseconds
                                       ? 0
                                       : 1;
 
@@ -721,7 +723,7 @@ namespace VRTK
             debugVisualizationQuadMaterial.SetInt(ShaderPropertyIDs.LastFrameIsInBudget, lastFrameIsInBudget);
         }
 
-        #endregion
+        #endregion Debug visualization methods
 
         #region Private helper classes
 
@@ -801,7 +803,7 @@ namespace VRTK
             public void SaveCurrentFrameTiming()
             {
                 bufferIndex = (bufferIndex + 1) % buffer.Length;
-                buffer[bufferIndex] = VRStats.gpuTimeLastFrame;
+				VRStats.TryGetGPUTimeLastFrame(out buffer[bufferIndex]);
             }
 
             public float GetFrameTiming(int framesAgo)
@@ -879,7 +881,7 @@ namespace VRTK
             }
         }
 
-        #endregion
+        #endregion Private helper classes
     }
 }
 #endif
